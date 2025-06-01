@@ -1,7 +1,7 @@
 """
-PrizePicks scraper for player props using The Odds API.
+Underdog Fantasy scraper for player props using The Odds API.
 
-Now uses real API data instead of mock data!
+Real API integration - no mock data needed!
 """
 
 from typing import List, Dict, Any
@@ -10,16 +10,16 @@ from utils.line_schema import create_line_schema
 from market_odds.odds_api import OddsAPIClient
 
 
-class PrizePicksScraper:
-    """Real PrizePicks data scraper using The Odds API."""
+class UnderdogScraper:
+    """Real Underdog Fantasy data scraper using The Odds API."""
     
     def __init__(self, api_key: str):
         """Initialize with API key."""
         self.client = OddsAPIClient(api_key)
         
-    def scrape_prizepicks(self, sports: List[str] = None) -> List[Dict[str, Any]]:
+    def scrape_underdog(self, sports: List[str] = None) -> List[Dict[str, Any]]:
         """
-        Get real player props from PrizePicks via The Odds API.
+        Get real player props from Underdog Fantasy via The Odds API.
         
         Args:
             sports: List of sports to scrape (defaults to active sports)
@@ -34,19 +34,18 @@ class PrizePicksScraper:
         
         for sport in sports:
             try:
-                # Get PrizePicks odds for this sport (remove markets filter)
+                # Get Underdog odds for this sport
                 odds_data = self.client.get_odds(
                     sport=sport,
                     regions='us_dfs',
-                    bookmakers='prizepicks'
-                    # Removed markets parameter - let's get all available markets
+                    bookmakers='underdog'
                 )
                 
                 lines = self._parse_odds_to_lines(odds_data, sport)
                 all_lines.extend(lines)
                 
             except Exception as e:
-                print(f"⚠️  Could not get {sport} from PrizePicks: {e}")
+                print(f"⚠️  Could not get {sport} from Underdog: {e}")
                 continue
         
         return all_lines
@@ -60,7 +59,7 @@ class PrizePicksScraper:
             event_date = datetime.fromisoformat(game.get('commence_time', '').replace('Z', '+00:00'))
             
             for bookmaker in game.get('bookmakers', []):
-                if bookmaker.get('key') != 'prizepicks':
+                if bookmaker.get('key') != 'underdog':
                     continue
                     
                 for market in bookmaker.get('markets', []):
@@ -97,7 +96,7 @@ class PrizePicksScraper:
             
             if player_name and line_value is not None:
                 line = create_line_schema(
-                    sportsbook="PrizePicks",
+                    sportsbook="Underdog",
                     sport=self._convert_sport_key(sport),
                     league=self._convert_sport_key(sport),
                     event_name=event_name,
@@ -123,37 +122,26 @@ class PrizePicksScraper:
         return mapping.get(sport_key, sport_key.upper())
 
 
-# Convenience functions for backward compatibility
-def scrape_prizepicks() -> List[Dict[str, Any]]:
+# Convenience functions
+def scrape_underdog() -> List[Dict[str, Any]]:
     """
-    Scrape player props from PrizePicks using real API data.
+    Scrape player props from Underdog Fantasy using real API data.
     
     Returns:
         List of betting lines in standardized format
     """
-    # Default API key - in production this should come from environment
     api_key = "a67ad13b23ed6a4bd92ee3bd279840a4"
-    scraper = PrizePicksScraper(api_key)
-    return scraper.scrape_prizepicks()
-
-
-def get_available_sports() -> List[str]:
-    """
-    Get list of sports available on PrizePicks.
-    
-    Returns:
-        List of sport names
-    """
-    return ["NBA", "NFL", "MLB", "NHL"]
+    scraper = UnderdogScraper(api_key)
+    return scraper.scrape_underdog()
 
 
 # Example usage and testing
 if __name__ == "__main__":
-    print("=== PrizePicks Real API Scraper Test ===")
+    print("=== Underdog Fantasy Real API Scraper Test ===")
     
     # Test scraping with real data
-    lines = scrape_prizepicks()
-    print(f"✅ Scraped {len(lines)} REAL lines from PrizePicks")
+    lines = scrape_underdog()
+    print(f"✅ Scraped {len(lines)} REAL lines from Underdog")
     
     # Show sample lines
     print("\nSample real lines:")
@@ -161,8 +149,4 @@ if __name__ == "__main__":
         print(f"{i}. {line['player_name']} - {line['market_type']} {line['over_under']} {line['line_value']}")
         print(f"   Odds: {line['odds']} | Event: {line['event_name']}")
     
-    # Test sports
-    sports = get_available_sports()
-    print(f"\n✅ Available sports: {', '.join(sports)}")
-    
-    print(f"\n🎯 REAL PrizePicks API scraper working! No more mock data!") 
+    print(f"\n🎯 REAL Underdog API scraper working!") 
